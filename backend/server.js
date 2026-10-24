@@ -21,6 +21,26 @@ app.use('/api/enquiries',enquiryRoutes);
 app.use('/api/admin/enquiries',enquiryRoutes);
 app.use((req,res)=>res.status(404).json({message:'API route not found.'}));
 app.use((err,req,res,next)=>{console.error(err.message);if(err.code===11000)return res.status(409).json({message:'A record with this value already exists.'});if(err.name==='ValidationError')return res.status(400).json({message:err.message});res.status(500).json({message:process.env.NODE_ENV==='production'?'Server error. Check backend logs and environment variables.':err.message});});
-const PORT=process.env.PORT||5000;
-if(process.env.NODE_ENV!=='production')connectDB().then(()=>app.listen(PORT,()=>console.log(`StayNest API running at http://localhost:${PORT}`))).catch(err=>{console.error(err.message);console.error('The server was not started because the database connection is not configured. Create backend/.env first.');process.exit(1)});
+const PORT = process.env.PORT || 5000;
+
+if (process.env.NODE_ENV !== 'production') {
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`StayNest API running at http://localhost:${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error(err.message);
+      console.error(
+        'The server was not started because the database connection is not configured. Create backend/.env first.'
+      );
+      process.exit(1);
+    });
+} else {
+  app.listen(PORT, () => {
+    console.log(`StayNest API running on port ${PORT}`);
+  });
+}
+
 export default app;
