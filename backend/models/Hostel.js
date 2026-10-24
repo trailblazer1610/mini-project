@@ -1,0 +1,3 @@
+import mongoose from 'mongoose';
+const hostelSchema = new mongoose.Schema({name:{type:String,required:true,trim:true},college:{type:String,required:true,trim:true},gender:{type:String,enum:['male','female','mixed'],default:'mixed'},price:{type:Number,required:true,min:1},rating:{type:Number,default:4.2,min:0,max:5},distanceKm:{type:Number,default:1,min:0},gym:{type:Boolean,default:false},noRestriction:{type:Boolean,default:false},amenities:{type:[String],default:[]},description:{type:String,default:'A student-friendly place with essential facilities.'}},{timestamps:true});
+export default mongoose.model('Hostel',hostelSchema);

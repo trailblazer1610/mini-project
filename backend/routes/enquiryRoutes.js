@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import Enquiry from '../models/Enquiry.js';
+import Hostel from '../models/Hostel.js';
+import { protect, adminOnly } from '../middleware/auth.js';
+const router=Router();
+router.post('/',protect,async(req,res,next)=>{try{const {hostelId,hostelName,message}=req.body;if(!message?.trim()||message.trim().length<5)return res.status(400).json({message:'Please enter a message of at least 5 characters.'});let name=hostelName?.trim()||'General enquiry';let hostel=null;if(hostelId){if(!/^[a-f\d]{24}$/i.test(hostelId))return res.status(400).json({message:'Invalid hostel id.'});hostel=await Hostel.findById(hostelId);if(!hostel)return res.status(404).json({message:'Hostel not found.'});name=hostel.name;}const enquiry=await Enquiry.create({user:req.user._id,hostel:hostel?._id,hostelName:name,message:message.trim()});res.status(201).json({message:'Enquiry sent successfully.',enquiry});}catch(e){next(e)}});
+router.get('/mine',protect,async(req,res,next)=>{try{const enquiries=await Enquiry.find({user:req.user._id}).populate('hostel','name').sort({createdAt:-1});res.json({enquiries});}catch(e){next(e)}});
+router.get('/admin',protect,adminOnly,async(req,res,next)=>{try{const enquiries=await Enquiry.find().populate('user','name email').populate('hostel','name').sort({createdAt:-1}).limit(200);res.json({enquiries});}catch(e){next(e)}});
+router.get('/',protect,adminOnly,async(req,res,next)=>{try{const enquiries=await Enquiry.find().populate('user','name email').populate('hostel','name').sort({createdAt:-1}).limit(200);res.json({enquiries});}catch(e){next(e)}});
+export default router;

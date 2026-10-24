@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import Hostel from '../models/Hostel.js';
+import Room from '../models/Room.js';
+import Enquiry from '../models/Enquiry.js';
+import { protect, adminOnly } from '../middleware/auth.js';
+const router=Router();
+router.get('/',async(req,res,next)=>{try{const {search,gender,gym,maxFee,sort}=req.query;const filter={};if(gender&&['male','female','mixed'].includes(gender))filter.gender=gender;if(gym==='true')filter.gym=true;if(maxFee&&Number.isFinite(Number(maxFee)))filter.price={$lte:Number(maxFee)};if(search)filter.$or=[{name:{$regex:search,$options:'i'}},{college:{$regex:search,$options:'i'}}];const sortMap={review:{rating:-1},distance:{distanceKm:1},feeLow:{price:1},feeHigh:{price:-1}};const hostels=await Hostel.find(filter).sort(sortMap[sort]||{rating:-1}).limit(100);res.json({hostels});}catch(e){next(e)}});
+router.get('/:id',async(req,res,next)=>{try{if(!/^[a-f\d]{24}$/i.test(req.params.id))return res.status(404).json({message:'Hostel not found.'});const hostel=await Hostel.findById(req.params.id);if(!hostel)return res.status(404).json({message:'Hostel not found.'});res.json({hostel});}catch(e){next(e)}});
+router.post('/',protect,adminOnly,async(req,res,next)=>{try{const {name,college,price}=req.body;if(!name||!college||!Number(price))return res.status(400).json({message:'Hostel name, college and a valid price are required.'});const hostel=await Hostel.create({...req.body,price:Number(price)});res.status(201).json({hostel});}catch(e){next(e)}});
+router.put('/:id',protect,adminOnly,async(req,res,next)=>{try{const hostel=await Hostel.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});if(!hostel)return res.status(404).json({message:'Hostel not found.'});res.json({hostel});}catch(e){next(e)}});
+router.delete('/:id',protect,adminOnly,async(req,res,next)=>{try{const hostel=await Hostel.findByIdAndDelete(req.params.id);if(!hostel)return res.status(404).json({message:'Hostel not found.'});await Room.deleteMany({hostel:hostel._id});await Enquiry.updateMany({hostel:hostel._id},{$set:{status:'closed'}});res.json({message:'Hostel deleted.'});}catch(e){next(e)}});
+export default router;
